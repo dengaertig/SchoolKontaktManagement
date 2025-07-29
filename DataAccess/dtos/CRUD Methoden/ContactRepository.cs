@@ -5,19 +5,57 @@ using System.Text;
 
 namespace KontaktManagement
 {
+    /// <summary>
+    /// Stellt Methoden für das Verwalten von Kontakten bereit, einschließlich Datenbankzugriff und CSV-Import/Export.
+    /// </summary>
     public class ContactRepository : IContactRepository
     {
         private readonly string connectionString;
-
+        /// <summary>
+        /// Initialisiert eine neue Instanz des <see cref="ContactRepository"/> mit einer Verbindungszeichenfolge.
+        /// </summary>
+        /// <param name="connectionString">Die SQL-Verbindungszeichenfolge.</param>
         public ContactRepository(string connectionString)
         {
             this.connectionString = connectionString;
         }
+        /// <summary>
+        /// Fügt einen neuen Kontakt in die Datenbank ein.
+        /// </summary>
+        /// <param name="contact">Der zu speichernde Kontakt.</param>
+        /// <returns>Die generierte ContactID des neuen Kontakts.</returns>
         public int CreateContact(Contact contact)
         {
-            return 0;
+            using (SqlConnection connection = new SqlConnection(connectionString))
+            {
+                connection.Open();
+
+                string query = @"
+            INSERT INTO dbo.Contact (FirstName, LastName, Email, Phonenumber, City, Birthdate)
+            OUTPUT INSERTED.ContactId
+            VALUES (@FirstName, @LastName, @Email, @Phonenumber, @City, @Birthdate)";
+
+                using (SqlCommand command = new SqlCommand(query, connection))
+                {
+                    command.Parameters.AddWithValue("@FirstName", contact.FirstName ?? (object)DBNull.Value);
+                    command.Parameters.AddWithValue("@LastName", contact.LastName ?? (object)DBNull.Value);
+                    command.Parameters.AddWithValue("@Email", contact.Email ?? (object)DBNull.Value);
+                    command.Parameters.AddWithValue("@Phonenumber", string.IsNullOrWhiteSpace(contact.Phonenumber) ? (object)DBNull.Value : contact.Phonenumber);
+                    command.Parameters.AddWithValue("@City", string.IsNullOrWhiteSpace(contact.City) ? (object)DBNull.Value : contact.City);
+                    command.Parameters.AddWithValue("@Birthdate", contact.Birthdate.HasValue ? contact.Birthdate.Value.ToDateTime(TimeOnly.MinValue) : (object)DBNull.Value);
+
+                    // Gibt die generierte ContactID zurück
+                    int newId = (int)command.ExecuteScalar();
+                    return newId;
+                }
+            }
         }
 
+        /// <summary>
+        /// Liest einen Kontakt anhand seiner ID aus der Datenbank und gibt ihn in der Konsole aus.
+        /// </summary>
+        /// <param name="contactID">Die ID des Kontakts.</param>
+        /// <returns>Ein <see cref="Contact"/>-Objekt, oder ein leerer Kontakt, wenn nicht gefunden.</returns>
         public Contact ReadContact(int contactID)
         {
             using (SqlConnection connection = new SqlConnection(connectionString))
@@ -46,7 +84,10 @@ namespace KontaktManagement
             }
             return new Contact();
         }
-
+        /// <summary>
+        /// Liest alle Kontakte aus der Datenbank, zeigt sie in der Konsole und gibt sie als Liste zurück.
+        /// </summary>
+        /// <returns>Eine Liste aller vorhandenen Kontakte.</returns>
         public List<Contact> ReadContacts()
         {
             var contacts = new List<Contact>();
@@ -104,7 +145,11 @@ namespace KontaktManagement
 
             return contacts;
         }
-
+        /// <summary>
+        /// Aktualisiert einen bestehenden Kontakt in der Datenbank anhand seiner ID.
+        /// </summary>
+        /// <param name="contact">Das aktualisierte Kontaktobjekt.</param>
+        /// <returns><c>true</c>, wenn die Aktualisierung erfolgreich war; andernfalls <c>false</c>.</returns>
         public bool UpdateContact(Contact contact)
         {
             using (SqlConnection connection = new SqlConnection(connectionString))
@@ -136,7 +181,11 @@ namespace KontaktManagement
                 }
             }
         }
-
+        /// <summary>
+        /// Löscht einen Kontakt anhand seiner ID.
+        /// </summary>
+        /// <param name="contactID">Die ID des zu löschenden Kontakts.</param>
+        /// <returns><c>true</c>, wenn ein Kontakt gelöscht wurde; andernfalls <c>false</c>.</returns>
         public bool DeleteContact(int contactID)
         {
             using (SqlConnection connection = new SqlConnection(connectionString))
@@ -153,6 +202,12 @@ namespace KontaktManagement
                 }
             }
         }
+        /// <summary>
+        /// Importiert Kontakte aus einer CSV-Datei (UTF-8, Semikolon-separiert).
+        /// Doppelte Einträge (nach E-Mail) werden übersprungen.
+        /// </summary>
+        /// <param name="filePath">Pfad zur CSV-Datei.</param>
+        /// <exception cref="IOException">Wird ausgelöst, wenn die Datei nicht gelesen werden kann.</exception>
         public void ImportContactsFromCsv(string filePath)
         {
             if (!File.Exists(filePath))
@@ -168,14 +223,13 @@ namespace KontaktManagement
                 var lines = File.ReadAllLines(filePath);
                 int imported = 0, skipped = 0;
 
-                foreach (var line in lines.Skip(1)) // Erste Zeile = Header
+                foreach (var line in lines.Skip(1))
                 {
                     var columns = line.Split(';');
                     if (columns.Length < 6) continue;
 
                     string email = columns[2];
 
-                    // Prüfe auf Duplikat (nach Email)
                     string checkQuery = "SELECT COUNT(*) FROM dbo.Contact WHERE Email = @Email";
                     using (var checkCmd = new SqlCommand(checkQuery, connection))
                     {
@@ -210,7 +264,12 @@ namespace KontaktManagement
                 Console.WriteLine($"Import abgeschlossen. {imported} importiert, {skipped} übersprungen (bereits vorhanden).");
             }
         }
-
+        /// <summary>
+        /// Exportiert alle Kontakte aus der Datenbank in eine neue CSV-Datei.
+        /// Felder mit null-Werten werden leer geschrieben.
+        /// </summary>
+        /// <param name="filePath">Zielpfad der zu erstellenden CSV-Datei.</param>
+        /// <exception cref="IOException">Wird ausgelöst, wenn die Datei nicht geschrieben werden kann.</exception>
         public void ExportContactsToCsv(string filePath)
         {
             var contacts = ReadContacts();
