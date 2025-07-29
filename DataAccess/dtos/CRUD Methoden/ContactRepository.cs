@@ -1,5 +1,7 @@
 using Microsoft.Data.SqlClient;
 using System.Globalization;
+using System.IO;
+using System.Text;
 
 namespace KontaktManagement
 {
@@ -151,5 +153,83 @@ namespace KontaktManagement
                 }
             }
         }
+        public void ImportContactsFromCsv(string filePath)
+        {
+            if (!File.Exists(filePath))
+            {
+                Console.WriteLine("CSV-Datei nicht gefunden.");
+                return;
+            }
+
+            using (var connection = new SqlConnection(connectionString))
+            {
+                connection.Open();
+
+                var lines = File.ReadAllLines(filePath);
+                int imported = 0, skipped = 0;
+
+                foreach (var line in lines.Skip(1)) // Erste Zeile = Header
+                {
+                    var columns = line.Split(';');
+                    if (columns.Length < 6) continue;
+
+                    string email = columns[2];
+
+                    // Prüfe auf Duplikat (nach Email)
+                    string checkQuery = "SELECT COUNT(*) FROM dbo.Contact WHERE Email = @Email";
+                    using (var checkCmd = new SqlCommand(checkQuery, connection))
+                    {
+                        checkCmd.Parameters.AddWithValue("@Email", email);
+                        int exists = (int)checkCmd.ExecuteScalar();
+                        if (exists > 0)
+                        {
+                            skipped++;
+                            continue;
+                        }
+                    }
+
+                    // Einfügen
+                    string insertQuery = @"
+                INSERT INTO dbo.Contact (FirstName, LastName, Email, Phonenumber, City, Birthdate)
+                VALUES (@FirstName, @LastName, @Email, @Phonenumber, @City, @Birthdate)";
+
+                    using (var insertCmd = new SqlCommand(insertQuery, connection))
+                    {
+                        insertCmd.Parameters.AddWithValue("@FirstName", columns[0]);
+                        insertCmd.Parameters.AddWithValue("@LastName", columns[1]);
+                        insertCmd.Parameters.AddWithValue("@Email", columns[2]);
+                        insertCmd.Parameters.AddWithValue("@Phonenumber", string.IsNullOrWhiteSpace(columns[3]) ? (object)DBNull.Value : columns[3]);
+                        insertCmd.Parameters.AddWithValue("@City", string.IsNullOrWhiteSpace(columns[4]) ? (object)DBNull.Value : columns[4]);
+                        insertCmd.Parameters.AddWithValue("@Birthdate", DateTime.TryParse(columns[5], out var bd) ? bd : (object)DBNull.Value);
+
+                        insertCmd.ExecuteNonQuery();
+                        imported++;
+                    }
+                }
+
+                Console.WriteLine($"Import abgeschlossen. {imported} importiert, {skipped} übersprungen (bereits vorhanden).");
+            }
+        }
+
+        public void ExportContactsToCsv(string filePath)
+        {
+            var contacts = ReadContacts();
+            var sb = new StringBuilder();
+            sb.AppendLine("FirstName;LastName;Email;Phonenumber;City;Birthdate");
+
+            foreach (var contact in contacts)
+            {
+                string birthdateStr = contact.Birthdate.HasValue && contact.Birthdate.Value >= new DateOnly(1753, 1, 1)
+                    ? contact.Birthdate.Value.ToString("yyyy-MM-dd")
+                    : "";
+
+                sb.AppendLine($"{contact.FirstName};{contact.LastName};{contact.Email};{contact.Phonenumber};{contact.City};{birthdateStr}");
+            }
+
+            File.WriteAllText(filePath, sb.ToString(), Encoding.UTF8);
+            Console.WriteLine($"Export abgeschlossen: {filePath}");
+        }
+
+
     }
 }

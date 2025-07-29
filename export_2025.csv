@@ -1,0 +1,10 @@
+﻿FirstName;LastName;Email;Phonenumber;City;Birthdate
+Anna;Schmidt;anna.schmidt@example.com;017612345678;Berlin;1990-05-15
+Max;Müller;max.mueller@example.com;017698765432;München;1985-11-30
+Laura;Fischer;laura.fischer@example.com;;Hamburg;1993-02-20
+Tom;Becker;tom.becker@example.com;015112345678;;1988-08-10
+Sophie;Neumann;sophie.neumann@example.com;016012345678;Köln;
+Lukas;Schneider;lukas.schneider@example.com;;;1995-03-25
+Julia;Weber;julia.weber@example.com;017700112233;Stuttgart;1991-12-01
+Tim;Wagner;tim.wagner@example.com;017600998877;Frankfurt;1987-06-05
+NinaSchmina;HoffmannZoffmann;nina.hoffmannZoffmann@example.com;;Dresden;

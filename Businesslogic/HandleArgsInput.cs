@@ -13,7 +13,7 @@ namespace KontaktManagement
         {
             if (args.Length == 0)
             {
-                Console.WriteLine("Keine Argumente übergeben. Nutze: create | read | update | delete | list");
+                Console.WriteLine("Keine Argumente übergeben. Nutze: create | read | update | delete | list |export | import");
                 return;
             }
 
@@ -82,9 +82,26 @@ namespace KontaktManagement
                     bool deleted = repository.DeleteContact(deleteId);
                     Console.WriteLine(deleted ? "Kontakt gelöscht." : "Löschen fehlgeschlagen.");
                     break;
+                case "import":
+                    if (args.Length < 2)
+                    {
+                        Console.WriteLine("import <PfadZurCSV>");
+                        return;
+                    }
+                    repository.ImportContactsFromCsv(args[1]);
+                    break;
+
+                case "export":
+                    if (args.Length < 2)
+                    {
+                        Console.WriteLine("export <ZielDatei.csv>");
+                        return;
+                    }
+                    repository.ExportContactsToCsv(args[1]);
+                    break;
 
                 default:
-                    Console.WriteLine("Unbekanntes Kommando. Nutze: create | read | update | delete | list");
+                    Console.WriteLine("Unbekanntes Kommando. Nutze: create | read | update | delete | list | export | import");
                     break;
             }
         }
