@@ -1,0 +1,80 @@
+# .NET Build
+bin/
+obj/
+*.user
+*.rsuser
+*.suo
+*.userosscache
+*.sln.docstates
+
+# VS Code settings
+.vscode/
+
+# Build results
+[Dd]ebug*/
+[Rr]elease*/
+x64/
+x86/
+build/
+[Bb]uild[Ll]og.*
+
+# .NET Core
+project.lock.json
+project.fragment.lock.json
+artifacts/
+
+# ASP.NET Scaffolding
+ScaffoldingReadMe.txt
+
+# NuGet
+*.nupkg
+*.snupkg
+.nuget/
+packages/
+# Avoid ignoring the directory if it's part of your solution
+!packages/build/
+!packages/repositories.config
+
+# Rider (falls du es mal nutzt)
+.idea/
+
+# Logs
+*.log
+
+# User-specific files
+*.vspscc
+*.vssscc
+*.vsp
+*.psess
+*.suo
+
+# Resharper
+_ReSharper*/
+*.[Rr]e[Ss]harper
+*.DotSettings.user
+
+# Temporary files
+*.tmp
+*.bak
+*.swp
+*.~*
+
+# Test results
+TestResults/
+*.coverage
+*.coveragexml
+*.testsettings
+*.vsmdi
+*.trx
+
+# Others
+*.dbmdl
+*.sql
+*.pdb
+*.mdb
+
+# dotCover
+*.dotCover
+
+# global.json lock file
+global.json.lock
