@@ -31,17 +31,17 @@ namespace KontaktManagement
                 connection.Open();
 
                 string query = @"
-            INSERT INTO dbo.Contact (FirstName, LastName, Email, Phonenumber, City, Birthdate)
-            OUTPUT INSERTED.ContactId
-            VALUES (@FirstName, @LastName, @Email, @Phonenumber, @City, @Birthdate)";
+                                INSERT INTO dbo.Contact (FirstName, LastName, Email, Phonenumber, City, Birthdate)
+                                OUTPUT INSERTED.ContactId
+                                VALUES (@FirstName, @LastName, @Email, @Phonenumber, @City, @Birthdate)";
 
                 using (SqlCommand command = new SqlCommand(query, connection))
                 {
-                    command.Parameters.AddWithValue("@FirstName", contact.FirstName ?? (object)DBNull.Value);
-                    command.Parameters.AddWithValue("@LastName", contact.LastName ?? (object)DBNull.Value);
-                    command.Parameters.AddWithValue("@Email", contact.Email ?? (object)DBNull.Value);
-                    command.Parameters.AddWithValue("@Phonenumber", string.IsNullOrWhiteSpace(contact.Phonenumber) ? (object)DBNull.Value : contact.Phonenumber);
-                    command.Parameters.AddWithValue("@City", string.IsNullOrWhiteSpace(contact.City) ? (object)DBNull.Value : contact.City);
+                    command.Parameters.AddWithValue("@FirstName", contact.FirstName);
+                    command.Parameters.AddWithValue("@LastName", contact.LastName);
+                    command.Parameters.AddWithValue("@Email", contact.Email);
+                    command.Parameters.AddWithValue("@Phonenumber", string.IsNullOrWhiteSpace(contact.Phonenumber));
+                    command.Parameters.AddWithValue("@City", string.IsNullOrWhiteSpace(contact.City));
                     command.Parameters.AddWithValue("@Birthdate", contact.Birthdate.HasValue ? contact.Birthdate.Value.ToDateTime(TimeOnly.MinValue) : (object)DBNull.Value);
 
                     // Gibt die generierte ContactID zurück
@@ -149,7 +149,7 @@ namespace KontaktManagement
         /// Aktualisiert einen bestehenden Kontakt in der Datenbank anhand seiner ID.
         /// </summary>
         /// <param name="contact">Das aktualisierte Kontaktobjekt.</param>
-        /// <returns><c>true</c>, wenn die Aktualisierung erfolgreich war; andernfalls <c>false</c>.</returns>
+        /// <returns> true, wenn die Aktualisierung erfolgreich war; andernfalls false.</returns>
         public bool UpdateContact(Contact contact)
         {
             using (SqlConnection connection = new SqlConnection(connectionString))
